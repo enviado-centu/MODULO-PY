@@ -1,3 +1,11 @@
 .venv
 .PhiUSIIL_Phishing_URL_Dataset.csv
 /PhiUSIIL_Phishing_URL_Dataset.csv
+__pycache__/
+*.pyc
+.venv/
+data/
+models/
+*.csv
+.ipynb_checkpoints/
+PhiUSIIL_Phishing_URL_Dataset.csv
