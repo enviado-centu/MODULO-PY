@@ -145,3 +145,52 @@ def extract_features(url: str) -> dict:
         "tiene_puerto": int(tiene_puerto),
         "marca_fuera_de_dominio": int(marca_fuera),
     }
+
+
+def _flags_tld(ext) -> dict:
+    """Codificación simple del sufijo en tres flags binarias."""
+    partes_sufijo = ext.suffix.split(".") if ext.suffix else []
+    ultimo_tld = partes_sufijo[-1] if partes_sufijo else ""
+    return {
+        "tld_ar": int(ultimo_tld == "ar"),
+        "tld_comun": int(any(p in TLDS_COMUNES for p in partes_sufijo)),
+        "tld_sospechoso": int(ultimo_tld in TLDS_SOSPECHOSOS),
+    }
+
+
+def _marca_fuera(tokens: set[str], dominio: str) -> bool:
+    """True si alguna marca aparece como token y el dominio no es uno de sus oficiales."""
+    return any(
+        marca in tokens and dominio not in oficiales
+        for marca, oficiales in MARCAS_OFICIALES.items()
+    )
+
+
+def extract_features_dominio(url: str) -> dict:
+    """Features calculadas SOLO sobre el hostname (sin esquema, path, query ni puerto).
+
+    Se quita el prefijo "www." para que no influya: en el dataset las legítimas
+    casi siempre lo tienen, y sería un atajo.
+    """
+    hostname = _parsear(url)[2]
+    host = hostname[4:] if hostname.startswith("www.") and "." in hostname[4:] else hostname
+    ext = _extractor(host)
+    dominio = _dominio_de_ext(ext)
+    tokens = _tokenizar(host)
+    cant_digitos = sum(c.isdigit() for c in host)
+
+    return {
+        "longitud_dominio": len(host),
+        "cant_puntos": host.count("."),
+        "cant_guiones": host.count("-"),
+        "cant_digitos": cant_digitos,
+        "proporcion_digitos": cant_digitos / len(host) if host else 0.0,
+        "cant_subdominios": len(ext.subdomain.split(".")) if ext.subdomain else 0,
+        "usa_ip": int(_es_ip(host)),
+        "tiene_punycode": int("xn--" in host),
+        "entropia_dominio": _entropia_shannon(host),
+        **_flags_tld(ext),
+        "es_acortador": int(dominio in ACORTADORES),
+        "cant_palabras_sospechosas": len(tokens & PALABRAS_SOSPECHOSAS),
+        "marca_fuera_de_dominio": int(_marca_fuera(tokens, dominio)),
+    }
