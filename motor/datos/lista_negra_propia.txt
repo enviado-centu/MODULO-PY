@@ -1,0 +1,11 @@
+# Lista negra propia. Una entrada por línea; "#" para comentarios.
+# dominio:ejemplo.com   -> bloquea todo el dominio registrable (solo si es entero del atacante)
+# https://sitio/ruta    -> bloquea esa URL exacta (se normaliza)
+# Nunca bloquear con "dominio:" una plataforma de hosting (web.app, github.io...): se ignora.
+# Sitios trampa de la demo en localhost: usar entradas por URL exacta
+# (http://localhost:PUERTO/ruta), porque "dominio:" no aplica a localhost.
+
+# Sitios trampa de la demo
+dominio:bna-homebanking-verificar.xyz
+dominio:mercadopago-reintegros.com
+https://paypal-login.web.app/verificar
