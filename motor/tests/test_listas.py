@@ -49,6 +49,7 @@ def test_urls_oficiales(url, marca):
     "https://bna.web.app",
     "https://bna.com.ar.evil.com",
     "https://google.com",
+    "https://bna.com.ar@sitio-malo.com",  # lo que va antes de la @ es un usuario, no el sitio
 ])
 def test_urls_no_oficiales(url):
     assert listas.es_oficial(url) is None
@@ -66,7 +67,7 @@ def test_lista_blanca_tamano_y_sin_hostings():
 def test_lista_blanca_con_hosting_lanza_error(tmp_path, monkeypatch):
     ruta = tmp_path / "lista_blanca.json"
     ruta.write_text(json.dumps({"marcas": {"trucha": {
-        "nombre": "Trucha", "dominios": ["web.app"], "alias": ["trucha"], "subcadena": False, "ambigua": False,
+        "nombre": "Trucha", "dominios": ["web.app"], "alias": ["trucha"], "alias_subcadena": [], "ambigua": False,
     }}}), encoding="utf-8")
     monkeypatch.setattr(listas, "RUTA_LISTA_BLANCA", ruta)
     with pytest.raises(ValueError, match="hosting"):

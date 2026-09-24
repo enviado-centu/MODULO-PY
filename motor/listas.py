@@ -29,7 +29,7 @@ HOSTINGS = frozenset({
     "onrender.com", "000webhostapp.com", "notion.site",
 })
 
-CLAVES_MARCA = ("nombre", "dominios", "alias", "subcadena", "ambigua")
+CLAVES_MARCA = ("nombre", "dominios", "alias", "alias_subcadena", "ambigua")
 PREFIJO_DOMINIO = "dominio:"
 
 _ESQUEMA = re.compile(r"^[a-z][a-z0-9+.-]*://")
@@ -95,6 +95,11 @@ def cargar_lista_blanca() -> dict:
         faltantes = [c for c in CLAVES_MARCA if c not in datos]
         if faltantes:
             raise ValueError(f"La marca '{marca_id}' de la lista blanca no tiene: {', '.join(faltantes)}")
+        sueltos = set(datos["alias_subcadena"]) - set(datos["alias"])
+        if sueltos:
+            raise ValueError(
+                f"La marca '{marca_id}' tiene en alias_subcadena alias que no están en alias: {', '.join(sorted(sueltos))}"
+            )
         hostings = [d for d in datos["dominios"] if d in HOSTINGS]
         if hostings:
             raise ValueError(
