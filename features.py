@@ -79,28 +79,41 @@ def _es_ip(host: str) -> bool:
         return False
 
 
-def extract_features(url: str) -> dict:
-    """Devuelve un diccionario de features numéricas léxicas de la URL."""
-    url = url.strip()
-    url_min = url.lower()
-
+def _parsear(url: str):
+    """Parseo común: devuelve (url_min, parsed, hostname, ext)."""
+    url_min = url.strip().lower()
     # urlparse necesita esquema para reconocer el host
     parsed = urlparse(url_min if "://" in url_min else "http://" + url_min)
     hostname = parsed.hostname or ""
+    return url_min, parsed, hostname, _extractor(hostname)
+
+
+def _dominio_de_ext(ext) -> str:
+    return f"{ext.domain}.{ext.suffix}" if ext.suffix else ext.domain
+
+
+def dominio_registrable(url: str) -> str:
+    """Dominio registrable de la URL (ej. bna.com.ar). Se usa como grupo en la división."""
+    return _dominio_de_ext(_parsear(url)[3])
+
+
+def extract_features(url: str) -> dict:
+    """Devuelve un diccionario de features numéricas léxicas de la URL."""
+    url = url.strip()
+    url_min, parsed, hostname, ext = _parsear(url)
     try:
         tiene_puerto = parsed.port is not None
     except ValueError:
         # Puerto inválido: igual hay un puerto explícito en la URL
         tiene_puerto = True
 
-    ext = _extractor(hostname)
     partes_sufijo = ext.suffix.split(".") if ext.suffix else []
     ultimo_tld = partes_sufijo[-1] if partes_sufijo else ""
-    dominio_registrable = f"{ext.domain}.{ext.suffix}" if ext.suffix else ext.domain
+    dominio = _dominio_de_ext(ext)
 
     tokens = _tokenizar(url)
     marca_fuera = any(
-        marca in tokens and dominio_registrable not in oficiales
+        marca in tokens and dominio not in oficiales
         for marca, oficiales in MARCAS_OFICIALES.items()
     )
 
@@ -128,7 +141,7 @@ def extract_features(url: str) -> dict:
         "longitud_path": len(parsed.path),
         "profundidad_path": len([s for s in parsed.path.split("/") if s]),
         "cant_parametros": len(parse_qsl(parsed.query, keep_blank_values=True)),
-        "es_acortador": int(dominio_registrable in ACORTADORES),
+        "es_acortador": int(dominio in ACORTADORES),
         "tiene_puerto": int(tiene_puerto),
         "marca_fuera_de_dominio": int(marca_fuera),
     }
