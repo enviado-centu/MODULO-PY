@@ -98,7 +98,11 @@ def dominio_registrable(url: str) -> str:
 
 
 def extract_features(url: str) -> dict:
-    """Devuelve un diccionario de features numéricas léxicas de la URL."""
+    """Devuelve un diccionario de features numéricas léxicas de la URL completa.
+
+    Solo para comparación experimental, no usar en el backend: las features del
+    path son un atajo del dataset (etapa 4).
+    """
     url = url.strip()
     url_min, parsed, hostname, ext = _parsear(url)
     try:
@@ -166,14 +170,48 @@ def _marca_fuera(tokens: set[str], dominio: str) -> bool:
     )
 
 
-def extract_features_dominio(url: str) -> dict:
-    """Features calculadas SOLO sobre el hostname (sin esquema, path, query ni puerto).
-
-    Se quita el prefijo "www." para que no influya: en el dataset las legítimas
-    casi siempre lo tienen, y sería un atajo.
-    """
+def _host_sin_www(url: str) -> str:
+    """Hostname sin el prefijo "www." (en el dataset las legítimas siempre lo tienen: sería un atajo)."""
     hostname = _parsear(url)[2]
-    host = hostname[4:] if hostname.startswith("www.") and "." in hostname[4:] else hostname
+    return hostname[4:] if hostname.startswith("www.") and "." in hostname[4:] else hostname
+
+
+def extract_features_dominio(url: str) -> dict:
+    """Features del dominio, sin esquema, path, query ni puerto (etapa 4c).
+
+    Las features estructurales se calculan sobre el dominio registrable para que
+    los subdominios no influyan (atajo del dataset). Las palabras sospechosas y la
+    marca miran el hostname completo, porque en hostings gratuitos la marca suele
+    estar en el subdominio (ej. paypal-login.web.app).
+    """
+    host = _host_sin_www(url)
+    ext = _extractor(host)
+    dominio = _dominio_de_ext(ext)
+    tokens = _tokenizar(host)
+    cant_digitos = sum(c.isdigit() for c in dominio)
+
+    return {
+        "longitud_dominio": len(dominio),
+        "cant_puntos": dominio.count("."),
+        "cant_guiones": dominio.count("-"),
+        "cant_digitos": cant_digitos,
+        "proporcion_digitos": cant_digitos / len(dominio) if dominio else 0.0,
+        "usa_ip": int(_es_ip(host)),
+        "tiene_punycode": int("xn--" in host),
+        "entropia_dominio": _entropia_shannon(dominio),
+        **_flags_tld(ext),
+        "es_acortador": int(dominio in ACORTADORES),
+        "cant_palabras_sospechosas": len(tokens & PALABRAS_SOSPECHOSAS),
+        "marca_fuera_de_dominio": int(_marca_fuera(tokens, dominio)),
+    }
+
+
+def extract_features_dominio_4b(url: str) -> dict:
+    """Versión 4b: features sobre el hostname completo (sin www), con cant_subdominios.
+
+    Solo para comparación experimental, no usar en el backend.
+    """
+    host = _host_sin_www(url)
     ext = _extractor(host)
     dominio = _dominio_de_ext(ext)
     tokens = _tokenizar(host)
