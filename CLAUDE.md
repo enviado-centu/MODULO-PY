@@ -16,6 +16,13 @@ Siempre trabajamos con una columna "phishing" donde 1 = phishing.
 - Toda la extracción de features vive en features.py, en la función
   extract_features(url: str) -> dict. El notebook y el backend la importan.
   Nunca duplicar lógica de features en el notebook.
+  - Aclaración: el modelo final usa extract_features_dominio (versión 4c), a
+    través de predict.py. extract_features y extract_features_dominio_4b son
+    experimentales y no se usan en el backend.
+  - En features.py va SOLO la lógica de features del modelo. Las reglas
+    deterministas van en motor/reglas.py, pero importan de features.py las
+    listas (PALABRAS_SOSPECHOSAS, MARCAS_OFICIALES, ACORTADORES, TLDS_*) y
+    dominio_registrable(). Nunca se duplican.
 - Usar tldextract para separar dominios (debe funcionar con .com.ar y .gob.ar).
 - División train/test POR DOMINIO REGISTRABLE con GroupShuffleSplit.
 - Solo scikit-learn. Nada de deep learning.
@@ -31,3 +38,35 @@ Siempre trabajamos con una columna "phishing" donde 1 = phishing.
 - Al terminar cada etapa, mostrar la cantidad de celdas del notebook y
   `git diff --stat` como prueba de que main.ipynb fue modificado.
 - No cerrar una etapa si main.ipynb no cambió.
+
+## Motor de análisis
+- El motor recibe una URL y devuelve un diagnóstico: combina lista negra,
+  lista blanca, reglas y el modelo de ML en un puntaje, con los motivos en
+  frases legibles.
+- No sabe nada de usuarios, de la extensión ni del LLM. Solo analiza URLs.
+- Node lo llama por HTTP en localhost:8000 (POST /analizar).
+
+### Estructura
+```
+motor/
+  listas.py     # carga y consulta de lista blanca y lista negra
+  reglas.py     # reglas deterministas
+  puntaje.py    # combina listas, reglas y modelo en un puntaje con motivos
+  api.py        # FastAPI: POST /analizar
+  datos/
+    lista_blanca.json
+    lista_negra_propia.txt
+  tests/        # pruebas con pytest
+```
+- Se usa `datos/` y no `data/` porque `data/` está en .gitignore.
+
+### Pruebas
+- Con pytest en motor/tests/. pytest es dependencia de desarrollo
+  (`uv add --dev pytest`).
+- Además, al final de cada etapa se agrega una celda de demostración en
+  main.ipynb.
+
+### Frases para el usuario
+- En español rioplatense, en lenguaje simple y sin tecnicismos.
+- Nunca afirman que el sitio "es" una estafa: hablan de señales
+  (ej. "Encontramos señales de que este sitio podría estar imitando a tu banco").
