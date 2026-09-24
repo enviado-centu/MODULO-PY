@@ -40,9 +40,13 @@ Siempre trabajamos con una columna "phishing" donde 1 = phishing.
 - No cerrar una etapa si main.ipynb no cambió.
 
 ## Motor de análisis
-- El motor recibe una URL y devuelve un diagnóstico: combina lista negra,
-  lista blanca, reglas y el modelo de ML en un puntaje, con los motivos en
-  frases legibles.
+- motor/ solo aporta listas (blanca y negra) y reglas deterministas que
+  devuelven señales con puntos y frases legibles. El modelo de ML lo aporta
+  predict.py.
+- El puntaje (0-100), los niveles (bajo < 40, medio 40-69, alto >= 70) y la
+  clasificación NO viven acá: los calcula el backend en un único lugar,
+  app/services/risk_service.py, combinando lista negra, lista blanca, reglas,
+  modelo y Kev. No reimplementar ese criterio en motor/.
 - No sabe nada de usuarios, de la extensión ni del LLM. Solo analiza URLs.
 - Node lo llama por HTTP en localhost:8000 (POST /analizar).
 
@@ -51,7 +55,6 @@ Siempre trabajamos con una columna "phishing" donde 1 = phishing.
 motor/
   listas.py     # carga y consulta de lista blanca y lista negra
   reglas.py     # reglas deterministas
-  puntaje.py    # combina listas, reglas y modelo en un puntaje con motivos
   api.py        # FastAPI: POST /analizar
   datos/
     lista_blanca.json
