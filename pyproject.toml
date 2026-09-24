@@ -13,3 +13,8 @@ dependencies = [
     "scikit-learn>=1.9.1",
     "tldextract>=5.3.2",
 ]
+
+[dependency-groups]
+dev = [
+    "nbconvert>=7.17.1",
+]

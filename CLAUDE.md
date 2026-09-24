@@ -24,3 +24,10 @@ Siempre trabajamos con una columna "phishing" donde 1 = phishing.
 - Hacer SOLO la etapa que se pide en cada mensaje. No adelantar etapas.
 - Si algo del dataset no coincide con lo descripto, avisar antes de asumir.
 - Si una métrica da sospechosamente perfecta, señalarlo y sugerir causas.
+
+## Registro en el notebook
+- Todo el código de cada etapa se escribe como celdas en main.ipynb. No usar
+  scripts temporales como sustituto: el notebook es el registro del proyecto.
+- Al terminar cada etapa, mostrar la cantidad de celdas del notebook y
+  `git diff --stat` como prueba de que main.ipynb fue modificado.
+- No cerrar una etapa si main.ipynb no cambió.
